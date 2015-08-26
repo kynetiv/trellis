@@ -25,11 +25,21 @@
 - name: WP installed?
   command: wp core is-installed --allow-root
   args:
-    chdir: "{{ www_root }}/{{ item.key }}/current/"
+    chdir: "{{ www_root }}/{{ item.key }}/current/web"
   register: site_statuses
   with_dict: wordpress_sites
-  changed_when: False
-  failed_when: site_statuses.stderr != ""
+  ignore_errors: yes
+
+- name: WP Config
+  command: wp core config
+           --allow-root
+           --dbname="{{item.value.env.db_name}}"
+           --dbuser="{{item.value.env.db_user}}"
+           --dbpass="{{item.value.env.db_password}}"
+  args:
+    chdir: "{{ www_root }}/{{ item.key }}/current/web"
+  with_dict: wordpress_sites
+  ignore_errors: yes
 
 - name: Install WP
   command: wp core install
@@ -40,7 +50,7 @@
            --admin_password="{{ item.item.value.admin_password }}"
            --admin_email="{{ item.item.value.admin_email }}"
   args:
-    chdir: "{{ www_root }}/{{ item.item.key }}/current/"
+    chdir: "{{ www_root }}/{{ item.item.key }}/current/web"
   with_items: site_statuses.results
   when: item.rc == 1 and item.item.value.site_install == True and (item.item.value.multisite.enabled | default(False) == False)
 
@@ -55,7 +65,7 @@
            --admin_password="{{ item.item.value.admin_password }}"
            --admin_email="{{ item.item.value.admin_email }}"
   args:
-    chdir: "{{ www_root }}/{{ item.item.key }}/current/"
+    chdir: "{{ www_root }}/{{ item.item.key }}/current/web"
   with_items: site_statuses.results
   when: item.rc == 1 and item.item.value.site_install == True and (item.item.value.multisite.enabled | default(False) == True)
 
