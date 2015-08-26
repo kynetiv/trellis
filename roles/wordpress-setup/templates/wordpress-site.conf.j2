@@ -5,13 +5,13 @@ server {
   listen 443 ssl spdy;
   {% else -%}
   listen 80;
-  server_name_in_redirect off;
+  #server_name_in_redirect off;
   {% endif %}
 
-  server_name  {{ item.value.site_hosts | join(' ') }} *.{{item.value.site_hosts | join(' ') }};
+  server_name  *.{{item.value.site_hosts | join(' ') }} {{ item.value.site_hosts | join(' ') }};
   access_log   {{ www_root }}/{{ item.key }}/logs/access.log;
-  error_log    {{ www_root }}/{{ item.key }}/logs/error.log;
-  #rewrite_log on; # logs will be in error.log
+  error_log    {{ www_root }}/{{ item.key }}/logs/error.log notice;
+  rewrite_log on; # logs will be in error.log
 
   root  {{ www_root }}/{{ item.key }}/current/web;
   index index.php;
@@ -25,8 +25,8 @@ server {
 
   {% if item.value.multisite.enabled | default(false) -%}
     {% if item.value.multisite.subdomains | default(false) -%}
-      rewrite ^/(wp-.*.php)$ /$1 last;
-      rewrite ^/(wp-(content|admin|includes)/.*) /$1 last;
+      #rewrite ^/(wp-.*.php)$ /$1 last;
+      #rewrite ^/(wp-(content|admin|includes)/.*) /$1 last;
     {%- else -%}
       include wordpress_multisite_subdirectories.conf;
     {%- endif %}
@@ -57,8 +57,8 @@ server {
   location ~ \.php$ {
     {% if item.value.multisite.enabled | default(false) -%}
       {% if item.value.multisite.subdomains | default(false) -%}
-         try_files /wp-content/w3tc-$host/pgcache/_index.html $uri $uri/ /index.php?$args;
-       {%- endif %}
+        try_files $uri =404;
+      {%- endif %}
    {%- else -%}
      try_files $uri =404;
    {%- endif %}
